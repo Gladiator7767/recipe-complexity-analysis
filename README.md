@@ -6,7 +6,7 @@
 
 This project studies recipes and user ratings collected from Food.com. The cleaned dataset contains 83,782 recipes, with one row per recipe. I focus on the question: **Which recipe characteristics are associated with the number of steps in a recipe, and how well can they predict it?**
 
-I use `n_steps` as the response and as a simple measure of recipe complexity. It counts how many instructions a cook must complete, though it does not measure how difficult each instruction is. The most relevant columns are:
+I use `n_steps` as the response and as a simple measure of recipe complexity. It counts how many instructions a cook must complete, though it does not measure how difficult each instruction is. Understanding these patterns can help cooks estimate the work involved and help recipe authors describe recipe complexity. The most relevant columns are:
 
 - `n_steps`: number of instructions in a recipe.
 - `n_ingredients`: number of ingredients.
@@ -91,7 +91,7 @@ The statistic is directional because the alternative specifically says “larger
 
 ## Framing a Prediction Problem
 
-I predict `n_steps`, making this a regression problem. The prediction is made while a recipe listing is being drafted, after its expected time, ingredient count, nutrition information, and description are known, but before its detailed instructions are examined. I evaluate models with RMSE because it measures prediction error in steps and gives extra weight to large mistakes.
+I predict `n_steps`, making this a regression problem. I chose it because it directly counts the instructions a cook must follow. The prediction is made while a recipe listing is being drafted, after its expected time, ingredient count, nutrition information, and description are known, but before its detailed instructions are examined. I evaluate models with RMSE because it measures prediction error in steps and gives extra weight to large mistakes.
 
 The text in `steps` is excluded because it directly reveals the response. `average_rating` is excluded because ratings are generated after publication. Recipe and contributor IDs are also excluded because they identify records rather than describe recipe complexity. I use a fixed 75% training and 25% test split for both models.
 
@@ -108,10 +108,10 @@ The similar training and test values do not indicate severe overfitting, but an 
 
 The final model is also a `DecisionTreeRegressor`. Its Pipeline retains the two baseline features and uses two additional features:
 
-- `calories`, parsed once from `nutrition` during data cleaning and then reused directly by the model, because caloric content may reflect how substantial a recipe is.
+- `calories`, parsed from the original `nutrition` string inside the Pipeline, because caloric content may reflect how substantial a recipe is.
 - `description_word_count`, because recipes that need more explanation may also require more instructions.
 
-`calories` is created once during general data cleaning. The final Pipeline reuses that cleaned column while performing all model-specific feature assembly and fitting. Before using the test set, I used 5-fold cross-validation on the training set to search `max_depth` in 3, 5, 7, and 10 and `min_samples_leaf` in 1, 10, and 50. The best choice within this grid was `max_depth=7` and `min_samples_leaf=50`.
+Both new feature transformations and model fitting are contained in the same Pipeline. Before using the test set, I used 5-fold cross-validation on the training set to search `max_depth` in 3, 5, 7, and 10 and `min_samples_leaf` in 1, 10, and 50. The best choice within this grid was `max_depth=7` and `min_samples_leaf=50`.
 
 | Model | Training RMSE | Test RMSE |
 |---|---:|---:|
