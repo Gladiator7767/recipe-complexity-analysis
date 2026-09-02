@@ -58,7 +58,7 @@ The grouped table gives the same pattern in exact values. Recipes with 1-5 ingre
 
 ## Assessment of Missingness
 
-`average_rating` may be **MNAR** if the chance that a recipe receives a valid rating depends on the rating it would have received. For example, recipes that users would rate very positively or negatively may be more likely to prompt a rating than recipes that create little reaction. Page views, search impressions, favorites, and recommendation exposure would help measure whether a recipe had an opportunity to receive a rating; with those observed variables, MAR may become more plausible.
+I believe `average_rating` is plausibly **MNAR** because the chance that a recipe receives a valid rating may depend on the rating it would have received. For example, recipes that users would rate very positively or negatively may be more likely to prompt a rating than recipes that create little reaction. Page views, search impressions, favorites, and recommendation exposure would help measure whether a recipe had an opportunity to receive a rating; with those observed variables, MAR may become more plausible.
 
 I used permutation tests with the K-S statistic to compare the full numerical distributions when `average_rating` is missing and present. The null hypothesis is that missingness in `average_rating` is independent of the comparison column; the alternative is that the two distributions differ. For `n_steps`, the observed K-S statistic is 0.0760. None of the 1,000 simulated statistics was as large, so the simulation reports p < 0.001 at this resolution. This provides evidence that missingness in `average_rating` depends on the distribution of `n_steps`. For `protein_pdv`, the observed K-S statistic is 0.0175 and the empirical p-value is 0.320, so I fail to reject the null hypothesis. This is a lack of evidence that the distributions differ, not proof of independence.
 
@@ -80,7 +80,7 @@ I tested whether recipes above the median ingredient count have more steps on av
 - **Test statistic:** mean steps in the high-ingredient group minus mean steps in the low-ingredient group.
 - **Significance level:** 0.05.
 
-The statistic is directional because the alternative specifically says “larger.” The two means are 12.629 and 8.202 steps, an observed difference of 4.427. None of the 5,000 simulated statistics was as large, so p < 0.0002 at this simulation resolution. I reject the null hypothesis. The data provide strong evidence of an association, but this observational test does not establish causation.
+I used a permutation test because, under the null, the ingredient-group labels are exchangeable. Difference in means directly measures whether the high-ingredient group has more steps on average, and the statistic is directional because the alternative specifically says “larger.” The two means are 12.629 and 8.202 steps, an observed difference of 4.427. None of the 5,000 simulated statistics was as large, so p < 0.0002 at this simulation resolution. I reject the null hypothesis. The data provide strong evidence of an association, but this observational test does not establish causation.
 
 <iframe
   src="assets/ingredient-hypothesis.html"
@@ -111,14 +111,14 @@ The final model is also a `DecisionTreeRegressor`. Its Pipeline retains the two 
 - `calories`, parsed from the original `nutrition` string inside the Pipeline, because caloric content may reflect how substantial a recipe is.
 - `description_word_count`, because recipes that need more explanation may also require more instructions.
 
-Both new feature transformations and model fitting are contained in the same Pipeline. Before using the test set, I used 5-fold cross-validation on the training set to search `max_depth` in 3, 5, 7, and 10 and `min_samples_leaf` in 1, 10, and 50. The best choice within this grid was `max_depth=7` and `min_samples_leaf=50`.
+Both new feature transformations and model fitting are contained in the same Pipeline. I used 5-fold cross-validation on the training set to search `max_depth` in 3, 5, 7, and 10 and `min_samples_split` in 2, 5, 10, 20, 50, 100, and 200. The test set was not used for fitting or hyperparameter tuning. The best choice within this grid was `max_depth=7` and `min_samples_split=100`.
 
 | Model | Training RMSE | Test RMSE |
 |---|---:|---:|
 | Baseline | 5.573 | 5.627 |
-| Final | 5.346 | 5.476 |
+| Final | 5.319 | 5.474 |
 
-The final test RMSE is 2.68% lower than the baseline test RMSE on the same held-out recipes. The improvement is modest, but it is measured fairly and the added features have a data-based interpretation.
+The final test RMSE is 2.71% lower than the baseline test RMSE on the same held-out recipes. The improvement is modest, but it is measured fairly and the added features have a data-based interpretation.
 
 ## Fairness Analysis
 
@@ -129,7 +129,7 @@ I compared the final model for recipes with more than 9 ingredients (Group X) an
 - **Test statistic:** RMSE(Group X) minus RMSE(Group Y).
 - **Significance level:** 0.05.
 
-I kept the final fitted model and test predictions fixed and shuffled only the group labels. Group X has RMSE 6.455, compared with 4.605 for Group Y. The observed difference is 1.850, and none of the 5,000 simulated statistics was as large, so p < 0.0002 at this simulation resolution. I reject the null hypothesis and find evidence that the model is less accurate for recipes with many ingredients. These recipes also have more variable step counts, which may contribute to the gap, but the test does not identify its cause. A useful next step would be to add features that better describe complex recipes without using the leaked `steps` text.
+I kept the final fitted model and test predictions fixed and shuffled only the group labels. Group X has RMSE 6.443, compared with 4.615 for Group Y. The observed difference is 1.828, and none of the 5,000 simulated statistics was as large, so p < 0.0002 at this simulation resolution. I reject the null hypothesis and find evidence that the model is less accurate for recipes with many ingredients. These recipes also have more variable step counts, which may contribute to the gap, but the test does not identify its cause. A useful next step would be to add features that better describe complex recipes without using the leaked `steps` text.
 
 <iframe
   src="assets/fairness-test.html"
