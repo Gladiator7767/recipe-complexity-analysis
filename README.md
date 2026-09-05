@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This project studies recipes and user ratings collected from Food.com. The cleaned dataset contains 83,782 recipes, with one row per recipe. I focus on the question: **Which recipe characteristics are associated with the number of steps in a recipe, and how well can they predict it?**
+This project studies recipes and user ratings collected from Food.com, using the [Recipes and Ratings dataset provided for DSC 80](https://dsc80.com/proj04/recipes-and-ratings/). The cleaned dataset contains 83,782 recipes, with one row per recipe. I focus on the question: **Which recipe characteristics are associated with the number of steps in a recipe, and how well can they predict it?**
 
 I use `n_steps` as the response and as a simple measure of recipe complexity. It counts how many instructions a cook must complete, though it does not measure how difficult each instruction is. Understanding these patterns can help cooks estimate the work involved and help recipe authors describe recipe complexity. The most relevant columns are:
 
@@ -58,9 +58,9 @@ The grouped table gives the same pattern in exact values. Recipes with 1-5 ingre
 
 ## Assessment of Missingness
 
-I believe `average_rating` is plausibly **MNAR** because the chance that a recipe receives a valid rating may depend on the rating it would have received. For example, recipes that users would rate very positively or negatively may be more likely to prompt a rating than recipes that create little reaction. Page views, search impressions, favorites, and recommendation exposure would help measure whether a recipe had an opportunity to receive a rating; with those observed variables, MAR may become more plausible.
+I believe `average_rating` is plausibly **MNAR** because the chance that a recipe receives a valid rating may depend on the rating it would have received. For example, recipes that users would rate very positively or negatively may be more likely to prompt a rating than recipes that create little reaction. Page views, search impressions, favorites, and recommendation exposure would help measure whether a recipe had an opportunity to receive a rating; with those observed variables, MAR may become more plausible. These variables would not necessarily explain users' unreported satisfaction, so they would not guarantee MAR.
 
-I used permutation tests with the K-S statistic to compare the full numerical distributions when `average_rating` is missing and present. The null hypothesis is that missingness in `average_rating` is independent of the comparison column; the alternative is that the two distributions differ. For `n_steps`, the observed K-S statistic is 0.0760. None of the 1,000 simulated statistics was as large, so the simulation reports p < 0.001 at this resolution. This provides evidence that missingness in `average_rating` depends on the distribution of `n_steps`. For `protein_pdv`, the observed K-S statistic is 0.0175 and the empirical p-value is 0.320, so I fail to reject the null hypothesis. This is a lack of evidence that the distributions differ, not proof of independence.
+I used permutation tests with the K-S statistic to compare the full numerical distributions when `average_rating` is missing and present. The null hypothesis is that missingness in `average_rating` is independent of the comparison column; the alternative is that the two distributions differ. I used a significance level of 0.05 and shuffled only the missingness labels, keeping both group sizes fixed. For `n_steps`, the observed K-S statistic is 0.0760. The empirical p-value is 0: none of the 1,000 simulated statistics was at least as large. I reject the null at 0.05. A simulated p-value of 0 does not mean the true probability is exactly zero. This provides evidence that missingness in `average_rating` depends on the distribution of `n_steps`. For `protein_pdv`, the observed K-S statistic is 0.0175 and the empirical p-value is 0.320, so I fail to reject the null hypothesis. This is a lack of evidence that the distributions differ, not proof of independence. Neither test establishes MAR or rules out MNAR.
 
 The conditional step distributions below provide visual context for the first test.
 
@@ -80,7 +80,7 @@ I tested whether recipes above the median ingredient count have more steps on av
 - **Test statistic:** mean steps in the high-ingredient group minus mean steps in the low-ingredient group.
 - **Significance level:** 0.05.
 
-I used a permutation test because, under the null, the ingredient-group labels are exchangeable. Difference in means directly measures whether the high-ingredient group has more steps on average, and the statistic is directional because the alternative specifically says “larger.” The two means are 12.629 and 8.202 steps, an observed difference of 4.427. None of the 5,000 simulated statistics was as large, so p < 0.0002 at this simulation resolution. I reject the null hypothesis. The data provide strong evidence of an association, but this observational test does not establish causation.
+I used a permutation test because, under the null, the ingredient-group labels are exchangeable. Difference in means directly measures whether the high-ingredient group has more steps on average, and the statistic is directional because the alternative specifically says “larger.” The two means are 12.629 and 8.202 steps, an observed difference of 4.427. The empirical p-value is 0: none of the 5,000 simulated statistics was at least as large. I reject the null at 0.05. This simulated p-value does not mean the true probability is exactly zero. The data provide strong evidence of an association, but this observational test does not establish causation.
 
 <iframe
   src="assets/ingredient-hypothesis.html"
@@ -91,7 +91,7 @@ I used a permutation test because, under the null, the ingredient-group labels a
 
 ## Framing a Prediction Problem
 
-I predict `n_steps`, making this a regression problem. I chose it because it directly counts the instructions a cook must follow. The prediction is made while a recipe listing is being drafted, after its expected time, ingredient count, nutrition information, and description are known, but before its detailed instructions are examined. I evaluate models with RMSE because it measures prediction error in steps and gives extra weight to large mistakes.
+I predict `n_steps`, making this a regression problem. I chose it because it directly counts the instructions a cook must follow. The prediction is made while a recipe listing is being drafted, after its expected time, ingredient count, nutrition information, and description are known, but before its detailed instructions are examined. I evaluate models with RMSE because it measures prediction error in steps and gives extra weight to large mistakes. Compared with MAE, RMSE penalizes large errors more strongly. Unlike R-squared, it is measured in steps, making the errors easier to interpret.
 
 The text in `steps` is excluded because it directly reveals the response. `average_rating` is excluded because ratings are generated after publication. Recipe and contributor IDs are also excluded because they identify records rather than describe recipe complexity. I use a fixed 75% training and 25% test split for both models.
 
@@ -129,7 +129,7 @@ I compared the final model for recipes with more than 9 ingredients (Group X) an
 - **Test statistic:** RMSE(Group X) minus RMSE(Group Y).
 - **Significance level:** 0.05.
 
-I kept the final fitted model and test predictions fixed and shuffled only the group labels. Group X has RMSE 6.443, compared with 4.615 for Group Y. The observed difference is 1.828, and none of the 5,000 simulated statistics was as large, so p < 0.0002 at this simulation resolution. I reject the null hypothesis and find evidence that the model is less accurate for recipes with many ingredients. These recipes also have more variable step counts, which may contribute to the gap, but the test does not identify its cause. A useful next step would be to add features that better describe complex recipes without using the leaked `steps` text.
+I kept the final fitted model and test predictions fixed and shuffled only the group labels. Group X has RMSE 6.443, compared with 4.615 for Group Y. The observed difference is 1.828, and the empirical p-value is 0: none of the 5,000 simulated statistics was at least as large. This simulated p-value does not mean the true probability is exactly zero. I reject the null at 0.05 and find evidence that the model is less accurate for recipes with many ingredients. These recipes also have more variable step counts, which may contribute to the gap, but the test does not identify its cause. Here, fairness means prediction performance across recipe groups, not discrimination against groups of people. A useful next step would be to add features that better describe complex recipes without using the leaked `steps` text.
 
 <iframe
   src="assets/fairness-test.html"
