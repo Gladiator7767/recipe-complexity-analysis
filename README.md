@@ -2,6 +2,14 @@
 
 **Yifeng Zheng**
 
+<style>
+.wrapper {width: auto; max-width: 960px;}
+header {display: none;}
+section {width: 100%; float: none;}
+footer {position: static; width: 100%; float: none; clear: both;}
+iframe {display: block; width: 100%; max-width: 100%;}
+</style>
+
 ## Introduction
 
 This project studies recipes and user ratings collected from Food.com, using the [Recipes and Ratings dataset provided for DSC 80](https://dsc80.com/proj04/recipes-and-ratings/). The cleaned dataset contains 83,782 recipes, with one row per recipe. I focus on the question: **Which recipe characteristics are associated with the number of steps in a recipe, and how well can they predict it?**
